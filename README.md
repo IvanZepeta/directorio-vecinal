@@ -80,6 +80,10 @@ Reglas del proyecto:
 
 ## Pendientes conocidos (post-esqueleto)
 
+- **SMTP propio (bloqueante para lanzar)**: el mailer integrado de Supabase
+  permite ~2-4 correos/hora en todo el proyecto — insuficiente para el día
+  del lanzamiento. Configurar Resend/Brevo en Authentication → SMTP Settings
+  y subir los Rate Limits.
 - Compresión de imágenes en el cliente antes de subir.
 - Reseñas con fotos (la tabla `fotos_resena` ya existe; falta UI).
 - Botón de reportar reseña/proveedor (tabla `reportes` lista; falta UI).

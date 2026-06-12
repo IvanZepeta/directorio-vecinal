@@ -25,7 +25,9 @@ export default function LoginPage() {
     setSending(false);
     if (error) {
       setError(
-        "No se pudo enviar el enlace. Revisa el correo e intenta de nuevo.",
+        error.message.toLowerCase().includes("rate limit")
+          ? "Se alcanzó el límite de correos por hora. Espera un rato e intenta de nuevo."
+          : `No se pudo enviar el enlace: ${error.message}`,
       );
     } else {
       setSent(true);
