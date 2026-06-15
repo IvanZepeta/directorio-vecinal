@@ -84,8 +84,7 @@ Reglas del proyecto:
   permite ~2-4 correos/hora en todo el proyecto — insuficiente para el día
   del lanzamiento. Configurar Resend/Brevo en Authentication → SMTP Settings
   y subir los Rate Limits.
-- Compresión de imágenes en el cliente antes de subir.
-- Reseñas con fotos (la tabla `fotos_resena` ya existe; falta UI).
+- Reseñas con fotos (la tabla `review_photos` ya existe; falta UI).
 - Botón de reportar reseña/proveedor (tabla `reportes` lista; falta UI).
 - Alta de eventos desde `/admin` (hoy se insertan por SQL).
 - Workflows n8n: aviso de registro nuevo, keep-alive de Supabase, respaldo.

@@ -190,6 +190,37 @@ export async function updateProvider(input: {
   if (insertError) throw insertError;
 }
 
+// Tope total de fotos por proveedor (entre todos los vecinos que aportan).
+export const MAX_PROVIDER_PHOTOS = 12;
+// Tope por vecino en un mismo proveedor (fomenta diversidad, evita monopolio).
+export const MAX_PHOTOS_PER_USER = 4;
+
+export async function countProviderPhotos(
+  providerId: string,
+): Promise<number> {
+  const supabase = await createServerSupabase();
+  const { count, error } = await supabase
+    .from("provider_photos")
+    .select("*", { count: "exact", head: true })
+    .eq("provider_id", providerId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function countProviderPhotosByUser(
+  providerId: string,
+  userId: string,
+): Promise<number> {
+  const supabase = await createServerSupabase();
+  const { count, error } = await supabase
+    .from("provider_photos")
+    .select("*", { count: "exact", head: true })
+    .eq("provider_id", providerId)
+    .eq("uploaded_by", userId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function deleteProviderPhoto(photoId: string): Promise<void> {
   const supabase = await createServerSupabase();
 
@@ -219,7 +250,9 @@ export async function uploadProviderPhoto(
   file: File,
 ): Promise<void> {
   const supabase = await createServerSupabase();
-  const extension = file.name.split(".").pop() ?? "jpg";
+  // La extensión sale del tipo real ("image/webp" → "webp"), no del nombre
+  // original, porque la compresión convierte la foto a WebP.
+  const extension = file.type.split("/")[1] || "jpg";
   const path = `providers/${providerId}/${crypto.randomUUID()}.${extension}`;
 
   const { error: uploadError } = await supabase.storage

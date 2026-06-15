@@ -1,23 +1,25 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import {
   createProviderAction,
   type ProviderFormState,
 } from "@/app/alta/actions";
 import { FieldError } from "@/components/field-error";
 import { cleanPhone } from "@/lib/format";
+import { compressImage } from "@/lib/compress-image";
 import type { Category } from "@/lib/types";
 
 const inputClass =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 
 export function ProviderForm({ categories }: { categories: Category[] }) {
-  const [state, submit, pending] = useActionState<ProviderFormState, FormData>(
-    createProviderAction,
-    {},
-  );
-  const [photoCount, setPhotoCount] = useState(0);
+  const [state, formAction, pending] = useActionState<
+    ProviderFormState,
+    FormData
+  >(createProviderAction, {});
+  const [files, setFiles] = useState<File[]>([]);
+  const [compressing, setCompressing] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   function validatePhone(value: string) {
@@ -27,8 +29,20 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
     );
   }
 
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    setCompressing(true);
+    for (const file of files) {
+      const compressed = await compressImage(file);
+      data.append("photos", compressed, compressed.name);
+    }
+    setCompressing(false);
+    startTransition(() => formAction(data));
+  }
+
   return (
-    <form action={submit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <label className="block text-sm">
         <span className="mb-1 block font-medium">Nombre del proveedor *</span>
         <input
@@ -101,24 +115,25 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
 
       <div className="text-sm">
         <span className="mb-1 block font-medium">
-          Fotos de sus trabajos (opcional, máx. 5)
+          Fotos de sus trabajos (opcional, máx. 4)
         </span>
         <div className="flex flex-wrap items-center gap-3">
           <label className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800">
             📷 Elegir fotos
             <input
               type="file"
-              name="photos"
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(e) => setPhotoCount(e.target.files?.length ?? 0)}
+              onChange={(e) =>
+                setFiles(Array.from(e.target.files ?? []).slice(0, 4))
+              }
             />
           </label>
           <span className="text-zinc-500">
-            {photoCount === 0
+            {files.length === 0
               ? "Ninguna foto seleccionada"
-              : `${photoCount} foto${photoCount > 1 ? "s" : ""} seleccionada${photoCount > 1 ? "s" : ""}`}
+              : `${files.length} foto${files.length > 1 ? "s" : ""} seleccionada${files.length > 1 ? "s" : ""}`}
           </span>
         </div>
       </div>
@@ -127,10 +142,14 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={compressing || pending}
         className="rounded-lg bg-emerald-600 px-5 py-2.5 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
       >
-        {pending ? "Guardando…" : "Recomendar proveedor"}
+        {compressing
+          ? "Optimizando fotos…"
+          : pending
+            ? "Guardando…"
+            : "Recomendar proveedor"}
       </button>
     </form>
   );

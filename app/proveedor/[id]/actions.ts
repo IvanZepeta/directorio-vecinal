@@ -10,7 +10,11 @@ import {
   updateReview,
 } from "@/lib/data/reviews";
 import {
+  countProviderPhotos,
+  countProviderPhotosByUser,
   deleteProviderPhoto,
+  MAX_PHOTOS_PER_USER,
+  MAX_PROVIDER_PHOTOS,
   uploadProviderPhoto,
 } from "@/lib/data/providers";
 
@@ -123,8 +127,30 @@ export async function addPhotosAction(
     return { error: "Elige al menos una foto." };
   }
 
+  const [total, mine] = await Promise.all([
+    countProviderPhotos(providerId.data),
+    countProviderPhotosByUser(providerId.data, profile.id),
+  ]);
+
+  if (total >= MAX_PROVIDER_PHOTOS) {
+    return {
+      error: `Este proveedor ya tiene el máximo de ${MAX_PROVIDER_PHOTOS} fotos. Elimina alguna para agregar otra.`,
+    };
+  }
+  if (mine >= MAX_PHOTOS_PER_USER) {
+    return {
+      error: `Ya subiste tus ${MAX_PHOTOS_PER_USER} fotos para este proveedor.`,
+    };
+  }
+
+  // Cabe lo menor entre: cupo del proveedor, cupo del vecino, y lo que eligió.
+  const allowed = Math.min(
+    MAX_PROVIDER_PHOTOS - total,
+    MAX_PHOTOS_PER_USER - mine,
+  );
+
   try {
-    for (const photo of photos.slice(0, 5)) {
+    for (const photo of photos.slice(0, allowed)) {
       await uploadProviderPhoto(providerId.data, photo);
     }
   } catch {
