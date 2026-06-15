@@ -7,16 +7,19 @@ import {
   type ReviewFormState,
 } from "@/app/proveedor/[id]/actions";
 import { StarRating } from "./star-rating";
+import { authorDisplay } from "@/lib/format";
 import type { Review } from "@/lib/types";
 
 export function ReviewItem({
   review,
   providerId,
   canEdit,
+  canSeeAuthor,
 }: {
   review: Review;
   providerId: string;
   canEdit: boolean;
+  canSeeAuthor: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(review.rating);
@@ -33,7 +36,7 @@ export function ReviewItem({
     <article className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="text-sm font-medium">
-          {review.author_name ?? "Vecino"}
+          {authorDisplay(review.author_name, canSeeAuthor)}
         </span>
         {!editing && <StarRating value={review.rating} className="text-sm" />}
       </div>

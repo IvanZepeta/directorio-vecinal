@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   updateProviderAction,
   type ProviderEditState,
 } from "@/app/proveedor/[id]/editar/actions";
+import { FieldError } from "@/components/field-error";
+import { cleanPhone } from "@/lib/format";
 import type { Category, Provider } from "@/lib/types";
 
 const inputClass =
@@ -22,6 +24,14 @@ export function ProviderEditForm({
     {},
   );
   const selected = new Set(provider.categories.map((c) => c.id));
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  function validatePhone(value: string) {
+    if (!value.trim()) return setPhoneError(null);
+    setPhoneError(
+      cleanPhone(value).length === 10 ? null : "El WhatsApp debe tener 10 dígitos",
+    );
+  }
 
   return (
     <form action={submit} className="space-y-4">
@@ -36,6 +46,7 @@ export function ProviderEditForm({
           defaultValue={provider.name}
           className={inputClass}
         />
+        <FieldError message={state.fieldErrors?.name} />
       </label>
 
       <label className="block text-sm">
@@ -43,11 +54,12 @@ export function ProviderEditForm({
         <input
           name="whatsapp"
           required
-          inputMode="numeric"
-          pattern="\d{10}"
+          inputMode="tel"
           defaultValue={provider.whatsapp}
+          onBlur={(e) => validatePhone(e.target.value)}
           className={inputClass}
         />
+        <FieldError message={phoneError ?? state.fieldErrors?.whatsapp} />
       </label>
 
       <fieldset className="text-sm">
@@ -70,6 +82,7 @@ export function ProviderEditForm({
             </label>
           ))}
         </div>
+        <FieldError message={state.fieldErrors?.categories} />
       </fieldset>
 
       <label className="block text-sm">

@@ -1,11 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { profileSchema } from "@/lib/validations";
+import { fieldErrorsFrom, profileSchema } from "@/lib/validations";
 import { createProfile, getSession } from "@/lib/data/profiles";
 
 export interface SignupFormState {
   error?: string;
+  fieldErrors?: Record<string, string>;
 }
 
 export async function createProfileAction(
@@ -24,7 +25,7 @@ export async function createProfileAction(
     neighborhoodId: formData.get("neighborhoodId"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { fieldErrors: fieldErrorsFrom(parsed.error) };
   }
 
   try {

@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   createProfileAction,
   type SignupFormState,
 } from "@/app/registro/actions";
+import { FieldError } from "@/components/field-error";
+import { cleanPhone } from "@/lib/format";
 import type { Neighborhood } from "@/lib/types";
 
 const inputClass =
@@ -19,12 +21,21 @@ export function SignupForm({
     createProfileAction,
     {},
   );
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  function validatePhone(value: string) {
+    if (!value.trim()) return setPhoneError(null);
+    setPhoneError(
+      cleanPhone(value).length === 10 ? null : "El teléfono debe tener 10 dígitos",
+    );
+  }
 
   return (
     <form action={submit} className="space-y-3">
       <label className="block text-sm">
         <span className="mb-1 block font-medium">Tu nombre *</span>
         <input name="name" required maxLength={80} className={inputClass} />
+        <FieldError message={state.fieldErrors?.name} />
       </label>
 
       <label className="block text-sm">
@@ -44,6 +55,7 @@ export function SignupForm({
             </option>
           ))}
         </select>
+        <FieldError message={state.fieldErrors?.neighborhoodId} />
       </label>
 
       <label className="block text-sm">
@@ -53,11 +65,12 @@ export function SignupForm({
         <input
           name="phone"
           required
-          inputMode="numeric"
-          pattern="\d{10}"
-          placeholder="8112345678"
+          inputMode="tel"
+          placeholder="81 1234 5678"
+          onBlur={(e) => validatePhone(e.target.value)}
           className={inputClass}
         />
+        <FieldError message={phoneError ?? state.fieldErrors?.phone} />
       </label>
 
       <label className="block text-sm">
@@ -69,6 +82,7 @@ export function SignupForm({
           placeholder="Ej. Privada Encinos 12"
           className={inputClass}
         />
+        <FieldError message={state.fieldErrors?.street} />
       </label>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { deletePhotoAction } from "@/app/proveedor/[id]/actions";
+import { authorDisplay } from "@/lib/format";
 import type { ProviderPhoto } from "@/lib/types";
 
 export function PhotoGallery({
@@ -10,12 +11,14 @@ export function PhotoGallery({
   providerName,
   viewerId,
   isAdmin,
+  canSeeAuthor,
 }: {
   photos: ProviderPhoto[];
   providerId: string;
   providerName: string;
   viewerId: string | null;
   isAdmin: boolean;
+  canSeeAuthor: boolean;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -65,9 +68,9 @@ export function PhotoGallery({
                   className="h-32 w-full rounded-lg object-cover"
                 />
               </button>
-              {photo.author_name && (
+              {canSeeAuthor && photo.author_name && (
                 <p className="mt-1 text-xs text-zinc-400">
-                  📷 {photo.author_name}
+                  📷 {authorDisplay(photo.author_name, true)}
                 </p>
               )}
               {canDelete && (
@@ -142,8 +145,10 @@ export function PhotoGallery({
                 {openIndex! + 1} / {photos.length}
               </span>
             )}
-            {current.author_name && (
-              <span className="ml-2">· 📷 {current.author_name}</span>
+            {canSeeAuthor && current.author_name && (
+              <span className="ml-2">
+                · 📷 {authorDisplay(current.author_name, true)}
+              </span>
             )}
           </div>
 

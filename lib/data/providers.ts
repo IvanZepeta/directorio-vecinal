@@ -84,9 +84,20 @@ export async function getProviders(
     const term = normalize(filters.search);
     providers = providers.filter((p) => {
       const haystack = normalize(
-        [p.name, p.description ?? "", p.areas ?? "", ...p.categories.map((c) => c.name)].join(" "),
+        [
+          p.name,
+          p.description ?? "",
+          p.areas ?? "",
+          p.whatsapp,
+          ...p.categories.map((c) => c.name),
+        ].join(" "),
       );
-      return haystack.includes(term);
+      // Para teléfonos: comparar también solo dígitos (ignora espacios)
+      const digits = term.replace(/\D/g, "");
+      return (
+        haystack.includes(term) ||
+        (digits.length >= 3 && p.whatsapp.includes(digits))
+      );
     });
   }
 

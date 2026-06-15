@@ -1,19 +1,35 @@
-import { z } from "zod";
+import { z, type ZodError } from "zod";
+import { cleanPhone } from "./format";
+
+// Convierte los issues de Zod en un mapa { campo: primer mensaje }
+// para mostrar cada error junto a su campo.
+export function fieldErrorsFrom(error: ZodError): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = String(issue.path[0] ?? "");
+    if (key && !result[key]) result[key] = issue.message;
+  }
+  return result;
+}
+
+// Limpia el número (quita espacios/guiones/lada) ANTES de validar que sean
+// 10 dígitos. Así el vecino puede escribir "81 1234 5678" y se guarda limpio.
+const phoneField = (label: string) =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? cleanPhone(value) : value),
+    z.string().regex(/^\d{10}$/, `${label} debe tener 10 dígitos`),
+  );
 
 export const profileSchema = z.object({
   name: z.string().trim().min(3, "Nombre muy corto").max(80),
-  phone: z
-    .string()
-    .regex(/^\d{10}$/, "Teléfono a 10 dígitos, sin espacios"),
+  phone: phoneField("El teléfono"),
   street: z.string().trim().min(2, "Indica tu privada o calle").max(80),
   neighborhoodId: z.uuid("Elige tu fraccionamiento"),
 });
 
 export const providerSchema = z.object({
   name: z.string().trim().min(3, "Nombre muy corto").max(80),
-  whatsapp: z
-    .string()
-    .regex(/^\d{10}$/, "WhatsApp a 10 dígitos, sin espacios"),
+  whatsapp: phoneField("El WhatsApp"),
   description: z.string().trim().max(500).optional().or(z.literal("")),
   areas: z.string().trim().max(200).optional().or(z.literal("")),
   categories: z.array(z.uuid()).min(1, "Elige al menos una categoría"),

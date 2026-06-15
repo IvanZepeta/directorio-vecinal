@@ -1,12 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { providerSchema } from "@/lib/validations";
+import { fieldErrorsFrom, providerSchema } from "@/lib/validations";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { createProvider, uploadProviderPhoto } from "@/lib/data/providers";
 
 export interface ProviderFormState {
   error?: string;
+  fieldErrors?: Record<string, string>;
 }
 
 export async function createProviderAction(
@@ -26,7 +27,7 @@ export async function createProviderAction(
     categories: formData.getAll("categories"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { fieldErrors: fieldErrorsFrom(parsed.error) };
   }
 
   let providerId: string;

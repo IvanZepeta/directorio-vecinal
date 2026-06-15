@@ -1,12 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { providerUpdateSchema } from "@/lib/validations";
+import { fieldErrorsFrom, providerUpdateSchema } from "@/lib/validations";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getProvider, updateProvider } from "@/lib/data/providers";
 
 export interface ProviderEditState {
   error?: string;
+  fieldErrors?: Record<string, string>;
 }
 
 export async function updateProviderAction(
@@ -27,7 +28,7 @@ export async function updateProviderAction(
     categories: formData.getAll("categories"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { fieldErrors: fieldErrorsFrom(parsed.error) };
   }
 
   const provider = await getProvider(parsed.data.providerId);

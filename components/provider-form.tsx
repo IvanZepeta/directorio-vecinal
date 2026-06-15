@@ -5,6 +5,8 @@ import {
   createProviderAction,
   type ProviderFormState,
 } from "@/app/alta/actions";
+import { FieldError } from "@/components/field-error";
+import { cleanPhone } from "@/lib/format";
 import type { Category } from "@/lib/types";
 
 const inputClass =
@@ -16,6 +18,14 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
     {},
   );
   const [photoCount, setPhotoCount] = useState(0);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  function validatePhone(value: string) {
+    if (!value.trim()) return setPhoneError(null);
+    setPhoneError(
+      cleanPhone(value).length === 10 ? null : "El WhatsApp debe tener 10 dígitos",
+    );
+  }
 
   return (
     <form action={submit} className="space-y-4">
@@ -28,6 +38,7 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
           placeholder="Ej. Don José — plomero"
           className={inputClass}
         />
+        <FieldError message={state.fieldErrors?.name} />
       </label>
 
       <label className="block text-sm">
@@ -35,11 +46,12 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
         <input
           name="whatsapp"
           required
-          inputMode="numeric"
-          pattern="\d{10}"
-          placeholder="8112345678"
+          inputMode="tel"
+          placeholder="81 1234 5678"
+          onBlur={(e) => validatePhone(e.target.value)}
           className={inputClass}
         />
+        <FieldError message={phoneError ?? state.fieldErrors?.whatsapp} />
       </label>
 
       <fieldset className="text-sm">
@@ -61,6 +73,7 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
             </label>
           ))}
         </div>
+        <FieldError message={state.fieldErrors?.categories} />
       </fieldset>
 
       <label className="block text-sm">

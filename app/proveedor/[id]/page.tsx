@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isSupabaseConfigured } from "@/lib/config";
 import { getProvider } from "@/lib/data/providers";
-import { getCurrentProfile } from "@/lib/data/profiles";
+import { getCurrentProfile, getSession } from "@/lib/data/profiles";
+import { formatPhone } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { Avatar } from "@/components/avatar";
 import { ReviewForm } from "@/components/review-form";
@@ -21,9 +22,10 @@ export default async function ProviderPage({
   if (!isSupabaseConfigured()) return <SetupNotice />;
 
   const { id } = await params;
-  const [provider, profile] = await Promise.all([
+  const [provider, profile, session] = await Promise.all([
     getProvider(id),
     getCurrentProfile(),
+    getSession(),
   ]);
   if (!provider) notFound();
 
@@ -74,6 +76,12 @@ export default async function ProviderPage({
           >
             💬 Contactar por WhatsApp
           </a>
+          <a
+            href={`tel:+52${provider.whatsapp}`}
+            className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
+          >
+            📞 {formatPhone(provider.whatsapp)}
+          </a>
           {profile?.status === "approved" &&
             (provider.created_by === profile.id || profile.is_admin) && (
               <Link
@@ -96,6 +104,7 @@ export default async function ProviderPage({
               providerName={provider.name}
               viewerId={profile?.status === "approved" ? profile.id : null}
               isAdmin={profile?.is_admin ?? false}
+              canSeeAuthor={!!session}
             />
           )}
           {profile?.status === "approved" && (
@@ -121,6 +130,7 @@ export default async function ProviderPage({
             canEdit={
               profile?.status === "approved" && review.user_id === profile.id
             }
+            canSeeAuthor={!!session}
           />
         ))}
 
