@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/config";
 import { getCurrentProfile, getSession } from "@/lib/data/profiles";
-import { signOutAction } from "@/app/actions";
+import { MainNav } from "@/components/main-nav";
 
 export async function Header() {
   const configured = isSupabaseConfigured();
@@ -15,53 +15,14 @@ export async function Header() {
           🏘️ Directorio vecinal
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/" className="hover:underline">
-            Directorio
-          </Link>
-          <Link href="/eventos" className="hover:underline">
-            Eventos
-          </Link>
-          {profile?.status === "approved" && (
-            <Link
-              href="/alta"
-              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700"
-            >
-              + Recomendar
-            </Link>
-          )}
-          {profile?.is_admin && (
-            <Link href="/admin" className="hover:underline">
-              Admin
-            </Link>
-          )}
-
-          {!session && configured && (
-            <Link
-              href="/login"
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-            >
-              Entrar
-            </Link>
-          )}
-          {session && !profile && (
-            <Link href="/registro" className="text-amber-600 hover:underline">
-              Completa tu registro
-            </Link>
-          )}
-          {profile?.status === "pending" && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-              Cuenta en revisión
-            </span>
-          )}
-          {session && (
-            <form action={signOutAction}>
-              <button type="submit" className="text-zinc-500 hover:underline">
-                Salir
-              </button>
-            </form>
-          )}
-        </nav>
+        <MainNav
+          configured={configured}
+          hasSession={!!session}
+          hasProfile={!!profile}
+          isApproved={profile?.status === "approved"}
+          isPending={profile?.status === "pending"}
+          isAdmin={profile?.is_admin ?? false}
+        />
       </div>
     </header>
   );

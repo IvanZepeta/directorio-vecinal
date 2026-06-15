@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Provider } from "@/lib/types";
 import { StarRating } from "./star-rating";
+import { avatarBg, avatarInitial } from "@/lib/avatar";
 
 export function ProviderCard({ provider }: { provider: Provider }) {
   const photo = provider.photos[0];
@@ -15,11 +16,16 @@ export function ProviderCard({ provider }: { provider: Provider }) {
         <img
           src={photo.url}
           alt={`Trabajo de ${provider.name}`}
+          loading="lazy"
           className="h-36 w-full object-cover"
         />
       ) : (
-        <div className="flex h-36 w-full items-center justify-center bg-zinc-100 text-4xl dark:bg-zinc-800">
-          🛠️
+        <div
+          className={`flex h-36 w-full items-center justify-center ${avatarBg(provider.name)}`}
+        >
+          <span className="text-5xl font-medium text-white">
+            {avatarInitial(provider.name)}
+          </span>
         </div>
       )}
       <div className="space-y-2 p-4">
@@ -40,6 +46,12 @@ export function ProviderCard({ provider }: { provider: Provider }) {
             <span className="text-zinc-500">({provider.review_count})</span>
           )}
         </div>
+        {provider.areas && (
+          <p className="flex items-center gap-1 text-xs text-zinc-500">
+            <span aria-hidden="true">📍</span>
+            <span className="truncate">{provider.areas}</span>
+          </p>
+        )}
       </div>
     </Link>
   );

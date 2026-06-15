@@ -2,7 +2,9 @@ import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/config";
 import { getCategories } from "@/lib/data/categories";
 import { getProviders } from "@/lib/data/providers";
+import { getCurrentProfile } from "@/lib/data/profiles";
 import { ProviderCard } from "@/components/provider-card";
+import { PendingBanner } from "@/components/pending-banner";
 import { SetupNotice } from "@/components/setup-notice";
 
 export const dynamic = "force-dynamic";
@@ -15,13 +17,27 @@ export default async function DirectoryPage({
   if (!isSupabaseConfigured()) return <SetupNotice />;
 
   const { categoria, q } = await searchParams;
-  const [categories, providers] = await Promise.all([
+  const [categories, providers, profile] = await Promise.all([
     getCategories(),
     getProviders({ categoryId: categoria, search: q }),
+    getCurrentProfile(),
   ]);
+
+  const activeCategory = categoria
+    ? categories.find((c) => c.id === categoria)?.name
+    : null;
+  const isFiltering = !!categoria || !!q?.trim();
+
+  const chipBase = "rounded-full px-3 py-1 text-sm transition";
+  const chipInactive =
+    "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700";
+  const chipActive = "bg-emerald-600 text-white";
 
   return (
     <div className="space-y-6">
+      {profile?.status === "pending" && (
+        <PendingBanner name={profile.name} />
+      )}
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">
           Recomendados por tus vecinos
@@ -31,7 +47,7 @@ export default async function DirectoryPage({
             type="search"
             name="q"
             defaultValue={q ?? ""}
-            placeholder="Buscar por nombre…"
+            placeholder="Buscar por nombre, servicio o zona…"
             className="w-full max-w-sm rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
           />
           <button
@@ -44,11 +60,7 @@ export default async function DirectoryPage({
         <div className="flex flex-wrap gap-2">
           <Link
             href="/"
-            className={`rounded-full px-3 py-1 text-sm ${
-              !categoria
-                ? "bg-emerald-600 text-white"
-                : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
-            }`}
+            className={`${chipBase} ${!categoria ? chipActive : chipInactive}`}
           >
             Todas
           </Link>
@@ -56,10 +68,8 @@ export default async function DirectoryPage({
             <Link
               key={category.id}
               href={`/?categoria=${category.id}`}
-              className={`rounded-full px-3 py-1 text-sm ${
-                categoria === category.id
-                  ? "bg-emerald-600 text-white"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+              className={`${chipBase} ${
+                categoria === category.id ? chipActive : chipInactive
               }`}
             >
               {category.name}
@@ -70,14 +80,24 @@ export default async function DirectoryPage({
 
       {providers.length === 0 ? (
         <p className="py-12 text-center text-zinc-500">
-          Aún no hay proveedores aquí. ¡Sé quien recomiende al primero!
+          {isFiltering
+            ? "No encontramos proveedores con esos filtros. Prueba con otra búsqueda o categoría."
+            : "Aún no hay proveedores aquí. ¡Sé quien recomiende al primero!"}
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {providers.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} />
-          ))}
-        </div>
+        <>
+          <p className="text-sm text-zinc-500">
+            {providers.length}{" "}
+            {providers.length === 1 ? "proveedor" : "proveedores"}
+            {activeCategory ? ` en ${activeCategory}` : ""}
+            {q?.trim() ? ` para “${q.trim()}”` : ""}
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {providers.map((provider) => (
+              <ProviderCard key={provider.id} provider={provider} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

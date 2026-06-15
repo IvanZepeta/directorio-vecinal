@@ -49,28 +49,48 @@ function mapProvider(row: ProviderRow): Provider {
   };
 }
 
+// Quita acentos y pasa a minúsculas para una búsqueda tolerante
+// ("fumigacion" encuentra "Fumigación").
+const DIACRITICS = new RegExp("[\\u0300-\\u036f]", "g");
+
+function normalize(text: string): string {
+  return text.toLowerCase().normalize("NFD").replace(DIACRITICS, "");
+}
+
 export async function getProviders(
   filters: { categoryId?: string; search?: string } = {},
 ): Promise<Provider[]> {
   const supabase = await createServerSupabase();
 
-  let query = supabase
+  // A escala de un fraccionamiento (decenas de proveedores) traemos los
+  // activos y filtramos en memoria: permite buscar también en categorías
+  // y descripción, y conserva todas las categorías de cada proveedor.
+  const { data, error } = await supabase
     .from("providers")
     .select(SUMMARY_SELECT)
-    .eq("status", "active");
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  let providers = (data as unknown as ProviderRow[]).map(mapProvider);
 
   if (filters.categoryId) {
-    query = query.eq("provider_categories.category_id", filters.categoryId);
-  }
-  if (filters.search) {
-    query = query.ilike("name", `%${filters.search}%`);
+    providers = providers.filter((p) =>
+      p.categories.some((c) => c.id === filters.categoryId),
+    );
   }
 
-  const { data, error } = await query.order("created_at", {
-    ascending: false,
-  });
-  if (error) throw error;
-  return (data as unknown as ProviderRow[]).map(mapProvider);
+  if (filters.search?.trim()) {
+    const term = normalize(filters.search);
+    providers = providers.filter((p) => {
+      const haystack = normalize(
+        [p.name, p.description ?? "", p.areas ?? "", ...p.categories.map((c) => c.name)].join(" "),
+      );
+      return haystack.includes(term);
+    });
+  }
+
+  return providers;
 }
 
 export async function getProvider(id: string): Promise<Provider | null> {

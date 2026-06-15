@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from "@/lib/config";
 import { getProvider } from "@/lib/data/providers";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { StarRating } from "@/components/star-rating";
+import { Avatar } from "@/components/avatar";
 import { ReviewForm } from "@/components/review-form";
 import { ReviewItem } from "@/components/review-item";
 import { PhotoUploadForm } from "@/components/photo-upload-form";
@@ -28,27 +29,34 @@ export default async function ProviderPage({
 
   return (
     <div className="space-y-8">
-      <section className="space-y-3">
-        <h1 className="text-2xl font-semibold">{provider.name}</h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <StarRating value={provider.average_rating} />
-          {provider.review_count > 0 && (
-            <span className="text-sm text-zinc-500">
-              {provider.review_count} reseña
-              {provider.review_count === 1 ? "" : "s"}
-            </span>
-          )}
-          <div className="flex flex-wrap gap-1">
-            {provider.categories.map((category) => (
-              <span
-                key={category.id}
-                className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-              >
-                {category.name}
-              </span>
-            ))}
+      <section className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={provider.name} className="h-14 w-14 text-xl" />
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold">{provider.name}</h1>
+            <div className="flex items-center gap-2">
+              <StarRating value={provider.average_rating} className="text-sm" />
+              {provider.review_count > 0 && (
+                <span className="text-sm text-zinc-500">
+                  ({provider.review_count} reseña
+                  {provider.review_count === 1 ? "" : "s"})
+                </span>
+              )}
+            </div>
           </div>
         </div>
+
+        <div className="flex flex-wrap gap-1">
+          {provider.categories.map((category) => (
+            <span
+              key={category.id}
+              className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+            >
+              {category.name}
+            </span>
+          ))}
+        </div>
+
         {provider.description && (
           <p className="text-zinc-600 dark:text-zinc-400">
             {provider.description}
