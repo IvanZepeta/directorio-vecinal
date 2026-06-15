@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import {
   deleteReviewAction,
   updateReviewAction,
-  type ReviewFormState,
 } from "@/app/proveedor/[id]/actions";
 import { StarRating } from "./star-rating";
 import { authorDisplay } from "@/lib/format";
@@ -23,14 +22,21 @@ export function ReviewItem({
 }) {
   const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(review.rating);
-  const [state, submit, pending] = useActionState<ReviewFormState, FormData>(
-    updateReviewAction,
-    {},
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startSaving] = useTransition();
 
-  useEffect(() => {
-    if (state.success) setEditing(false);
-  }, [state.success]);
+  function handleSave(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startSaving(async () => {
+      const result = await updateReviewAction({}, data);
+      if (result.error) setError(result.error);
+      else {
+        setError(null);
+        setEditing(false);
+      }
+    });
+  }
 
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -57,7 +63,10 @@ export function ReviewItem({
             <div className="mt-3 flex gap-3 text-sm">
               <button
                 type="button"
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setError(null);
+                  setEditing(true);
+                }}
                 className="text-emerald-600 hover:underline"
               >
                 Editar
@@ -82,7 +91,7 @@ export function ReviewItem({
       )}
 
       {editing && (
-        <form action={submit} className="mt-2 space-y-3">
+        <form onSubmit={handleSave} className="mt-2 space-y-3">
           <input type="hidden" name="reviewId" value={review.id} />
           <input type="hidden" name="providerId" value={providerId} />
           <input type="hidden" name="rating" value={rating} />
@@ -120,7 +129,7 @@ export function ReviewItem({
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
           />
 
-          {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex gap-2">
             <button
