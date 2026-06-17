@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   deleteReviewAction,
   updateReviewAction,
@@ -20,6 +21,7 @@ export function ReviewItem({
   canEdit: boolean;
   canSeeAuthor: boolean;
 }) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(review.rating);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function ReviewItem({
       else {
         setError(null);
         setEditing(false);
+        router.refresh();
       }
     });
   }
