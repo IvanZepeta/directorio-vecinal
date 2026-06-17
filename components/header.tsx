@@ -9,9 +9,9 @@ export async function Header() {
   const profile = session ? await getCurrentProfile() : null;
 
   return (
-    <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="text-lg font-semibold">
+    <header className="relative border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+        <Link href="/" className="text-base font-semibold sm:text-lg">
           🏘️ Directorio vecinal
         </Link>
 
