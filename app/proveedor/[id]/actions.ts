@@ -49,7 +49,12 @@ export async function createReviewAction(
       comment: parsed.data.comment,
       serviceDate: parsed.data.serviceDate,
     });
-  } catch {
+  } catch (err) {
+    if ((err as { code?: string })?.code === "23505") {
+      return {
+        error: "Ya dejaste una reseña para este proveedor. Puedes editarla.",
+      };
+    }
     return { error: "No se pudo guardar la reseña. Intenta de nuevo." };
   }
 

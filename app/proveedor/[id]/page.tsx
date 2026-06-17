@@ -29,6 +29,10 @@ export default async function ProviderPage({
   ]);
   if (!provider) notFound();
 
+  const isApproved = profile?.status === "approved";
+  const alreadyReviewed =
+    !!profile && provider.reviews.some((r) => r.user_id === profile.id);
+
   return (
     <div className="space-y-8">
       <section className="space-y-4">
@@ -134,24 +138,30 @@ export default async function ProviderPage({
           />
         ))}
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <h3 className="mb-3 font-medium">Deja tu reseña</h3>
-          {profile?.status === "approved" ? (
-            <ReviewForm providerId={provider.id} />
-          ) : profile?.status === "pending" ? (
-            <p className="text-sm text-zinc-500">
-              Tu cuenta está en revisión. Podrás reseñar en cuanto un
-              administrador la apruebe.
-            </p>
-          ) : (
-            <p className="text-sm text-zinc-500">
-              <Link href="/login" className="text-emerald-600 underline">
-                Entra con tu correo
-              </Link>{" "}
-              para dejar una reseña (solo vecinos verificados).
-            </p>
-          )}
-        </div>
+        {isApproved && alreadyReviewed ? (
+          <p className="text-sm text-zinc-500">
+            Ya dejaste tu reseña para este proveedor. Puedes editarla arriba.
+          </p>
+        ) : (
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <h3 className="mb-3 font-medium">Deja tu reseña</h3>
+            {isApproved ? (
+              <ReviewForm providerId={provider.id} />
+            ) : profile?.status === "pending" ? (
+              <p className="text-sm text-zinc-500">
+                Tu cuenta está en revisión. Podrás reseñar en cuanto un
+                administrador la apruebe.
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-500">
+                <Link href="/login" className="text-emerald-600 underline">
+                  Entra con tu correo
+                </Link>{" "}
+                para dejar una reseña (solo vecinos verificados).
+              </p>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );
