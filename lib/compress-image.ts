@@ -1,11 +1,17 @@
 import imageCompression from "browser-image-compression";
 
-// Comprime una foto en el navegador antes de subirla: la convierte a WebP
-// (~25-30% más liviano que JPEG a igual calidad), máx ~250 KB y 1280px de
-// lado mayor — suficiente para fotos de trabajos, ahorra storage y datos
-// móviles. Si la compresión falla por algo, devuelve el archivo original.
+// Comprime y convierte la foto a WebP estático en el navegador.
+// El canvas siempre produce UN solo cuadro, así que de un GIF o "foto en
+// movimiento" se extrae automáticamente una imagen fija. Si el archivo no
+// es una imagen que el navegador pueda decodificar (un video, por ejemplo),
+// lanza un error con mensaje claro para que el formulario lo muestre.
 export async function compressImage(file: File): Promise<File> {
-  if (!file.type.startsWith("image/")) return file;
+  if (!file.type.startsWith("image/")) {
+    throw new Error(
+      "Solo se permiten fotos fijas (JPG, PNG o WebP), no videos ni fotos en movimiento.",
+    );
+  }
+
   try {
     return await imageCompression(file, {
       maxSizeMB: 0.25,
@@ -15,6 +21,8 @@ export async function compressImage(file: File): Promise<File> {
       initialQuality: 0.8,
     });
   } catch {
-    return file;
+    throw new Error(
+      "No se pudo procesar esta foto. Intenta con una imagen normal (JPG o PNG).",
+    );
   }
 }

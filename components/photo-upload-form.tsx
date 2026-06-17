@@ -14,15 +14,25 @@ export function PhotoUploadForm({ providerId }: { providerId: string }) {
   >(addPhotosAction, {});
   const [files, setFiles] = useState<File[]>([]);
   const [compressing, setCompressing] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLocalError(null);
     setCompressing(true);
     const data = new FormData();
     data.set("providerId", providerId);
-    for (const file of files) {
-      const compressed = await compressImage(file);
-      data.append("photos", compressed, compressed.name);
+    try {
+      for (const file of files) {
+        const compressed = await compressImage(file);
+        data.append("photos", compressed, compressed.name);
+      }
+    } catch (err) {
+      setCompressing(false);
+      setLocalError(
+        err instanceof Error ? err.message : "No se pudo procesar la foto.",
+      );
+      return;
     }
     setCompressing(false);
     startTransition(() => formAction(data));
@@ -54,7 +64,9 @@ export function PhotoUploadForm({ providerId }: { providerId: string }) {
         </span>
       </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {(localError || state.error) && (
+        <p className="text-sm text-red-600">{localError ?? state.error}</p>
+      )}
       {state.success && (
         <p className="text-sm text-emerald-600">¡Fotos publicadas!</p>
       )}

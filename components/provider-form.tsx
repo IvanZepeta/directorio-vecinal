@@ -21,6 +21,7 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
   const [files, setFiles] = useState<File[]>([]);
   const [compressing, setCompressing] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   function validatePhone(value: string) {
     if (!value.trim()) return setPhoneError(null);
@@ -31,11 +32,20 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setPhotoError(null);
     const data = new FormData(e.currentTarget);
     setCompressing(true);
-    for (const file of files) {
-      const compressed = await compressImage(file);
-      data.append("photos", compressed, compressed.name);
+    try {
+      for (const file of files) {
+        const compressed = await compressImage(file);
+        data.append("photos", compressed, compressed.name);
+      }
+    } catch (err) {
+      setCompressing(false);
+      setPhotoError(
+        err instanceof Error ? err.message : "No se pudo procesar la foto.",
+      );
+      return;
     }
     setCompressing(false);
     startTransition(() => formAction(data));
@@ -136,6 +146,7 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
               : `${files.length} foto${files.length > 1 ? "s" : ""} seleccionada${files.length > 1 ? "s" : ""}`}
           </span>
         </div>
+        <FieldError message={photoError ?? undefined} />
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
