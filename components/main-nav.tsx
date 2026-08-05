@@ -12,6 +12,7 @@ interface NavProps {
   isApproved: boolean;
   isPending: boolean;
   isAdmin: boolean;
+  pendingCount: number;
 }
 
 export function MainNav(props: NavProps) {
@@ -59,9 +60,14 @@ export function MainNav(props: NavProps) {
           <Link
             href="/admin"
             onClick={close}
-            className={`${base} ${linkClass("/admin")}`}
+            className={`inline-flex items-center gap-1.5 ${base} ${linkClass("/admin")}`}
           >
             Admin
+            {props.pendingCount > 0 && (
+              <span className="rounded-full bg-red-600 px-1.5 text-xs font-medium text-white">
+                {props.pendingCount}
+              </span>
+            )}
           </Link>
         )}
         {!props.hasSession && props.configured && (
