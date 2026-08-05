@@ -17,19 +17,43 @@ export interface Category {
 export interface ProviderPhoto {
   id: string;
   url: string;
-  uploaded_by: string;
-  author_name: string | null;
+  // Solo presentes con sesión: para `anon` están revocados a nivel de columna
+  // (migración 0006), así que no viajan en la respuesta de la API.
+  uploaded_by?: string;
+  author_name?: string | null;
 }
 
 export interface Review {
   id: string;
-  user_id: string;
   rating: number;
   comment: string | null;
   service_date: string | null;
-  author_name: string | null;
   status: ReviewStatus;
   created_at: string;
+  // Iniciales precalculadas: es lo único de autor visible sin sesión.
+  author_initials: string;
+  // Solo presentes con sesión (revocados para `anon` en 0006).
+  user_id?: string;
+  author_name?: string | null;
+}
+
+// Formas "seguras para el cliente": ya enmascaradas y sin identificadores
+// internos (user_id / uploaded_by). Es lo ÚNICO de reseñas/fotos que cruza a
+// componentes "use client": sin sesión, el nombre completo y el UUID del autor
+// nunca deben viajar en el payload (privacidad de vecinos en página pública).
+export interface PublicReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  service_date: string | null;
+  author_label: string;
+}
+
+export interface PublicPhoto {
+  id: string;
+  url: string;
+  author_label: string | null;
+  can_delete: boolean;
 }
 
 export interface Provider {

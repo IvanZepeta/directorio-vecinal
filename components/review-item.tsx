@@ -7,19 +7,16 @@ import {
   updateReviewAction,
 } from "@/app/proveedor/[id]/actions";
 import { StarRating } from "./star-rating";
-import { authorDisplay } from "@/lib/format";
-import type { Review } from "@/lib/types";
+import type { PublicReview } from "@/lib/types";
 
 export function ReviewItem({
   review,
   providerId,
   canEdit,
-  canSeeAuthor,
 }: {
-  review: Review;
+  review: PublicReview;
   providerId: string;
   canEdit: boolean;
-  canSeeAuthor: boolean;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -44,9 +41,7 @@ export function ReviewItem({
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">
-          {authorDisplay(review.author_name, canSeeAuthor)}
-        </span>
+        <span className="text-sm font-medium">{review.author_label}</span>
         {!editing && <StarRating value={review.rating} className="text-sm" />}
       </div>
 
