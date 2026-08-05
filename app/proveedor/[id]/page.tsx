@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { isSupabaseConfigured } from "@/lib/config";
 import { getProvider } from "@/lib/data/providers";
 import { getCurrentProfile, getSession } from "@/lib/data/profiles";
-import { formatPhone } from "@/lib/format";
+import { authorDisplay, formatPhone } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { Avatar } from "@/components/avatar";
 import { ReviewForm } from "@/components/review-form";
@@ -22,16 +22,42 @@ export default async function ProviderPage({
   if (!isSupabaseConfigured()) return <SetupNotice />;
 
   const { id } = await params;
-  const [provider, profile, session] = await Promise.all([
-    getProvider(id),
+  const [profile, session] = await Promise.all([
     getCurrentProfile(),
     getSession(),
   ]);
+  // Con sesión traemos las columnas de autor; sin sesión ni se piden.
+  const provider = await getProvider(id, !!session);
   if (!provider) notFound();
 
   const isApproved = profile?.status === "approved";
+  const canSeeAuthor = !!session;
   const alreadyReviewed =
     !!profile && provider.reviews.some((r) => r.user_id === profile.id);
+
+  // Sanitiza en el servidor lo que se pasa a componentes cliente: el nombre
+  // completo y el user_id/uploaded_by NO deben serializarse en el payload si el
+  // visitante no tiene sesión. El enmascarado ya no vive en el cliente.
+  const publicReviews = provider.reviews.map((r) => ({
+    review: {
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      service_date: r.service_date,
+      author_label: canSeeAuthor
+        ? authorDisplay(r.author_name ?? null, true)
+        : r.author_initials,
+    },
+    canEdit: isApproved && r.user_id === profile!.id,
+  }));
+
+  const publicPhotos = provider.photos.map((p) => ({
+    id: p.id,
+    url: p.url,
+    author_label: canSeeAuthor ? authorDisplay(p.author_name ?? null, true) : null,
+    can_delete:
+      isApproved && (p.uploaded_by === profile!.id || !!profile?.is_admin),
+  }));
 
   return (
     <div className="space-y-8">
@@ -103,12 +129,9 @@ export default async function ProviderPage({
           <h2 className="text-lg font-medium">Fotos de sus trabajos</h2>
           {provider.photos.length > 0 && (
             <PhotoGallery
-              photos={provider.photos}
+              photos={publicPhotos}
               providerId={provider.id}
               providerName={provider.name}
-              viewerId={profile?.status === "approved" ? profile.id : null}
-              isAdmin={profile?.is_admin ?? false}
-              canSeeAuthor={!!session}
             />
           )}
           {profile?.status === "approved" && (
@@ -126,15 +149,12 @@ export default async function ProviderPage({
           </p>
         )}
 
-        {provider.reviews.map((review) => (
+        {publicReviews.map(({ review, canEdit }) => (
           <ReviewItem
             key={review.id}
             review={review}
             providerId={provider.id}
-            canEdit={
-              profile?.status === "approved" && review.user_id === profile.id
-            }
-            canSeeAuthor={!!session}
+            canEdit={canEdit}
           />
         ))}
 

@@ -1,11 +1,23 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { Category, Provider, ProviderPhoto, Review } from "@/lib/types";
 
+// El listado nunca muestra autor de foto ni de reseña: pide solo lo seguro.
 const SUMMARY_SELECT =
-  "*, provider_categories!inner(category_id, categories(id, name, icon)), provider_photos(id, url, uploaded_by, author_name), reviews(rating)";
+  "*, provider_categories!inner(category_id, categories(id, name, icon)), provider_photos(id, url), reviews(rating)";
 
-const DETAIL_SELECT =
-  "*, provider_categories(category_id, categories(id, name, icon)), provider_photos(id, url, uploaded_by, author_name), reviews(id, user_id, rating, comment, service_date, author_name, status, created_at)";
+// Columnas de autor: `anon` no puede leerlas (revocadas en 0006), así que solo
+// se piden cuando hay sesión. Sin sesión se usan las iniciales precalculadas.
+const REVIEW_PUBLIC =
+  "id, rating, comment, service_date, status, created_at, author_initials";
+const REVIEW_PRIVATE = `${REVIEW_PUBLIC}, user_id, author_name`;
+const PHOTO_PUBLIC = "id, url";
+const PHOTO_PRIVATE = `${PHOTO_PUBLIC}, uploaded_by, author_name`;
+
+function detailSelect(includePrivate: boolean): string {
+  const reviews = includePrivate ? REVIEW_PRIVATE : REVIEW_PUBLIC;
+  const photos = includePrivate ? PHOTO_PRIVATE : PHOTO_PUBLIC;
+  return `*, provider_categories(category_id, categories(id, name, icon)), provider_photos(${photos}), reviews(${reviews})`;
+}
 
 interface ProviderRow {
   id: string;
@@ -104,11 +116,16 @@ export async function getProviders(
   return providers;
 }
 
-export async function getProvider(id: string): Promise<Provider | null> {
+// includePrivate = hay sesión. Sin sesión NO se piden columnas de autor
+// (para `anon` están revocadas y la query fallaría de pedirlas).
+export async function getProvider(
+  id: string,
+  includePrivate = false,
+): Promise<Provider | null> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("providers")
-    .select(DETAIL_SELECT)
+    .select(detailSelect(includePrivate))
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -195,6 +212,18 @@ export const MAX_PROVIDER_PHOTOS = 12;
 // Tope por vecino en un mismo proveedor (fomenta diversidad, evita monopolio).
 export const MAX_PHOTOS_PER_USER = 4;
 
+// Segunda línea de defensa del lado del servidor: la compresión a WebP vive en
+// el cliente (compress-image.ts) y se puede saltar llamando la server action
+// directo. Aquí validamos tipo y tamaño reales antes de escribir al bucket
+// público, para que nadie suba HTML/SVG/ejecutables ni archivos gigantes.
+const ALLOWED_PHOTO_TYPES: Record<string, string> = {
+  "image/webp": "webp",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+};
+// El cliente comprime a ~250 KB; 2 MB deja holgura sin abrir la puerta a abuso.
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+
 export async function countProviderPhotos(
   providerId: string,
 ): Promise<number> {
@@ -250,14 +279,24 @@ export async function uploadProviderPhoto(
   file: File,
 ): Promise<void> {
   const supabase = await createServerSupabase();
-  // La extensión sale del tipo real ("image/webp" → "webp"), no del nombre
-  // original, porque la compresión convierte la foto a WebP.
-  const extension = file.type.split("/")[1] || "jpg";
+
+  // Rechaza cualquier archivo que no sea una imagen permitida o que exceda el
+  // tope de tamaño, ANTES de escribirlo al bucket público.
+  const extension = ALLOWED_PHOTO_TYPES[file.type];
+  if (!extension) {
+    throw new Error("Formato no permitido: solo JPG, PNG o WebP.");
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    throw new Error("La foto es demasiado grande.");
+  }
+
   const path = `providers/${providerId}/${crypto.randomUUID()}.${extension}`;
 
+  // contentType explícito: el archivo se sirve con el tipo que validamos, no
+  // con uno que el cliente pudiera falsear.
   const { error: uploadError } = await supabase.storage
     .from("photos")
-    .upload(path, file);
+    .upload(path, file, { contentType: file.type, upsert: false });
   if (uploadError) throw uploadError;
 
   const {

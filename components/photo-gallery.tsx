@@ -2,23 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { deletePhotoAction } from "@/app/proveedor/[id]/actions";
-import { authorDisplay } from "@/lib/format";
-import type { ProviderPhoto } from "@/lib/types";
+import type { PublicPhoto } from "@/lib/types";
 
 export function PhotoGallery({
   photos,
   providerId,
   providerName,
-  viewerId,
-  isAdmin,
-  canSeeAuthor,
 }: {
-  photos: ProviderPhoto[];
+  photos: PublicPhoto[];
   providerId: string;
   providerName: string;
-  viewerId: string | null;
-  isAdmin: boolean;
-  canSeeAuthor: boolean;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -49,10 +42,6 @@ export function PhotoGallery({
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {photos.map((photo, index) => {
-          const canDelete =
-            viewerId !== null &&
-            (photo.uploaded_by === viewerId || isAdmin);
-
           return (
             <div key={photo.id} className="relative">
               <button
@@ -68,12 +57,12 @@ export function PhotoGallery({
                   className="h-32 w-full rounded-lg object-cover"
                 />
               </button>
-              {canSeeAuthor && photo.author_name && (
+              {photo.author_label && (
                 <p className="mt-1 text-xs text-zinc-400">
-                  📷 {authorDisplay(photo.author_name, true)}
+                  📷 {photo.author_label}
                 </p>
               )}
-              {canDelete && (
+              {photo.can_delete && (
                 <form
                   action={deletePhotoAction}
                   onSubmit={(e) => {
@@ -145,10 +134,8 @@ export function PhotoGallery({
                 {openIndex! + 1} / {photos.length}
               </span>
             )}
-            {canSeeAuthor && current.author_name && (
-              <span className="ml-2">
-                · 📷 {authorDisplay(current.author_name, true)}
-              </span>
+            {current.author_label && (
+              <span className="ml-2">· 📷 {current.author_label}</span>
             )}
           </div>
 
