@@ -22,7 +22,29 @@
 
 # misc
 .DS_Store
+Thumbs.db
+desktop.ini
 *.pem
+
+# notas locales que no se publican (repo publico)
+*.local.md
+
+# datos personales de vecinos y proveedores: NUNCA al repo (es publico).
+# Respaldos de la BD y listas de siembra traen nombres, telefonos y calles.
+# Ojo: no ignorar *.sql, ahi viven las migraciones.
+/backups/
+*.dump
+*.sql.gz
+*.csv
+*.xlsx
+
+# editores
+.vscode/
+.idea/
+*.swp
+
+# claude code (config local de la maquina)
+.claude/settings.local.json
 
 # debug
 npm-debug.log*
