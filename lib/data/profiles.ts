@@ -47,6 +47,16 @@ export async function createProfile(input: {
   if (error) throw error;
 }
 
+export async function countPendingProfiles(): Promise<number> {
+  const supabase = await createServerSupabase();
+  const { count, error } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function getPendingProfiles(): Promise<Profile[]> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase

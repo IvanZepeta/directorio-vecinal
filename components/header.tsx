@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/config";
-import { getCurrentProfile, getSession } from "@/lib/data/profiles";
+import {
+  countPendingProfiles,
+  getCurrentProfile,
+  getSession,
+} from "@/lib/data/profiles";
 import { MainNav } from "@/components/main-nav";
 
 export async function Header() {
   const configured = isSupabaseConfigured();
   const session = configured ? await getSession() : null;
   const profile = session ? await getCurrentProfile() : null;
+  const pendingCount = profile?.is_admin ? await countPendingProfiles() : 0;
 
   return (
     <header className="relative border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -22,6 +27,7 @@ export async function Header() {
           isApproved={profile?.status === "approved"}
           isPending={profile?.status === "pending"}
           isAdmin={profile?.is_admin ?? false}
+          pendingCount={pendingCount}
         />
       </div>
     </header>
