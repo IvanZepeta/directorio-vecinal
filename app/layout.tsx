@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/header";
@@ -28,6 +29,10 @@ export default function RootLayout({
         </main>
         <footer className="border-t border-zinc-200 py-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
           Hecho por y para los vecinos 🤝
+          {" · "}
+          <Link href="/privacidad" className="underline hover:text-emerald-600">
+            Aviso de privacidad
+          </Link>
         </footer>
       </body>
     </html>

@@ -95,10 +95,25 @@ export function SignupForm({
         {pending ? "Guardando…" : "Enviar registro"}
       </button>
 
-      <p className="text-xs text-zinc-400">
-        Un administrador validará que vives en el fraccionamiento antes de
-        activar tu cuenta.
-      </p>
+      <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <p>
+          Un administrador validará que vives en el fraccionamiento antes de
+          activar tu cuenta.
+        </p>
+        <p>
+          <strong>Tu teléfono y tu calle solo los ve el administrador</strong>,
+          nunca otros vecinos. <strong>Tu nombre sí se muestra</strong> en las
+          reseñas que escribas: completo para vecinos con sesión, y solo tus
+          iniciales para quien entre sin cuenta.
+        </p>
+        <p>
+          Al enviar tu registro aceptas el{" "}
+          <a href="/privacidad" className="underline hover:text-emerald-600">
+            aviso de privacidad
+          </a>
+          .
+        </p>
+      </div>
     </form>
   );
 }
