@@ -102,6 +102,7 @@ export default async function ProviderPage({
         <div className="flex flex-wrap items-center gap-4">
           <a
             href={`/ir/${provider.id}`}
+            rel="nofollow"
             className="inline-block rounded-lg bg-green-600 px-5 py-2.5 font-medium text-white hover:bg-green-700"
           >
             💬 Contactar por WhatsApp

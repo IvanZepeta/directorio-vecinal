@@ -55,7 +55,16 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // /ir/:id cuenta el click y redirige a WhatsApp: no tiene nada que indexar
+      // y aparecer en resultados solo invita más tráfico de bots a esa ruta.
+      // El resto del sitio sí se indexa (decisión de producto).
+      {
+        source: "/ir/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
   },
 };
 
