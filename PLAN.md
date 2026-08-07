@@ -4,7 +4,11 @@
 > verificados del fraccionamiento. Resuelve: "¿alguien conoce un buen plomero?"
 > preguntado cada semana en el grupo de WhatsApp, con respuestas que se pierden.
 
-**Estado:** definición · **Última actualización:** 2026-06-11
+**Estado:** MVP completo, en producción, listo para lanzar (modo curado opción A). · **Última actualización:** 2026-08-05
+
+> Estado operativo y decisiones al día en [README.md](./README.md) (secciones
+> "Estado" y "Decisiones de producto"). Este PLAN conserva el alcance y
+> razonamiento original del MVP.
 
 ---
 
@@ -67,8 +71,13 @@ Reglas de arquitectura:
 - `lib/supabase/server.ts` (con sesión, backend) vs `client.ts` (solo login).
 - Auth = JWT gestionado por Supabase; autorización = políticas RLS en Postgres
   (segundo candado: vecino no aprobado no puede escribir, ni saltándose la UI).
+  La `anon key` es pública, así que la frontera real es la BD: RLS + privilegios
+  de columna (migración 0006 oculta nombre/ids de autor a `anon`). Ver la sección
+  "Seguridad" del README.
 - Fotos: comprimir en el cliente (~250 KB) antes de subir a Storage.
 - Multi-tenant desde el día 1 (tabla `fraccionamientos`, todo cuelga de ahí).
+  Los ajustes pendientes para dar de alta un 2º fraccionamiento se rastrean fuera
+  del repo (`SECURITY-TODO.local.md`).
 
 ## 4. Modelo de datos
 

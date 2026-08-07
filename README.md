@@ -7,14 +7,32 @@ completo del MVP y las decisiones de producto.
 **Stack:** Next.js (App Router) + TypeScript + Tailwind · Supabase (Postgres,
 Auth con magic link, Storage) · Vercel · n8n en VPS para automatizaciones.
 
+## Estado (ago 2026): listo para lanzar
+
+El MVP está completo y en producción. **No queda nada técnico bloqueante.**
+
+- **Deploy**: Vercel (repo GitHub `IvanZepeta/directorio-vecinal`, push a `main` = deploy). El sitio se sirve en la **URL de Vercel** (`directorio-vecinal.vercel.app`); no hay dominio propio apuntando a la app.
+- **Correo**: magic link vía **Resend** (subdominio verificado `send.edgarhernandez.tech`, SPF/DKIM/DMARC en verde) como Custom SMTP en Supabase. Template en español ("Magic Link"). Rate limits subidos. Llega a bandeja, no spam. El dominio `edgarhernandez.tech` (Hostinger) existe **solo** para esto: Resend exige un dominio verificado para enviar. Su DNS apunta al hosting de Hostinger, no a Vercel, así que el apex no sirve el sitio — y no hace falta que lo sirva.
+- **Lanzamiento en modo curado (opción A)**: directorio de solo lectura sembrado por el admin; los vecinos consultan y contactan por WhatsApp (el click se registra sin login). Las reseñas/registros abiertos vienen después, cuando haya tracción.
+
+**Seguridad:** auditoría previa al lanzamiento hecha (ago 2026) y correcciones aplicadas — privacidad del autor forzada en la BD (migración 0006, privilegios de columna para `anon`), subida de fotos restringida (tipo/tamaño/carpeta) y cabeceras de seguridad (CSP, HSTS, etc.). Detalle en la sección [Seguridad](#seguridad).
+
+**Lo que falta es operativo, no código:**
+1. Sembrar 30-50 proveedores del grupo de WhatsApp (como admin) + reseñar los que dieron servicio.
+2. Redactar y mandar el mensaje de lanzamiento al grupo.
+3. **Antes de que entren vecinos** (ya no opcional): keep-alive de Supabase (evita que el proyecto se pause por inactividad) y respaldo `pg_dump` diario, ambos en el VPS con n8n. En cuanto haya reseñas reales es data que no querés perder.
+
 ## Arranque local
 
 ### 1. Crear el proyecto de Supabase
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. Abre el **SQL Editor** y ejecuta el contenido completo de
-   [`supabase/migrations/0001_initial.sql`](./supabase/migrations/0001_initial.sql)
-   (crea tablas, políticas RLS, bucket de fotos y categorías semilla).
+2. Abre el **SQL Editor** y ejecuta **en orden** todas las migraciones de
+   [`supabase/migrations/`](./supabase/migrations) (`0001_initial.sql` →
+   `0006_privacy_and_uploads.sql`). La 0001 crea tablas, RLS, bucket de fotos
+   y categorías; las siguientes agregan ownership, borrado/autor de fotos, el
+   límite de una reseña por vecino y, la 0006, la privacidad del autor sin
+   sesión (privilegios de columna) más los límites de tipo/tamaño del bucket.
 3. En **Authentication → URL Configuration**, agrega
    `http://localhost:3000/auth/callback` a las Redirect URLs.
 
@@ -75,17 +93,51 @@ Reglas del proyecto:
 
 1. Sube el repo a GitHub y conéctalo en [vercel.com](https://vercel.com).
 2. Configura las dos variables de entorno en Vercel.
-3. Agrega `https://tu-dominio.com/auth/callback` a las Redirect URLs de
-   Supabase.
+3. Agrega `https://<tu-app>.vercel.app/auth/callback` a las Redirect URLs de
+   Supabase. La lista blanca valida el host completo: autorizar `localhost` no
+   autoriza la URL de Vercel, y si algún día se apunta un dominio propio a la
+   app hay que agregar también su `/auth/callback` o el magic link falla ahí.
 
-## Pendientes conocidos (post-esqueleto)
+## Seguridad
 
-- **SMTP propio (bloqueante para lanzar)**: el mailer integrado de Supabase
-  permite ~2-4 correos/hora en todo el proyecto — insuficiente para el día
-  del lanzamiento. Configurar Resend/Brevo en Authentication → SMTP Settings
-  y subir los Rate Limits.
-- Reseñas con fotos (la tabla `review_photos` ya existe; falta UI).
-- Botón de reportar reseña/proveedor (tabla `reportes` lista; falta UI).
-- Alta de eventos desde `/admin` (hoy se insertan por SQL).
-- Workflows n8n: aviso de registro nuevo, keep-alive de Supabase, respaldo.
-- PWA (manifest + íconos) para "instalar" en el celular.
+Modelo: la `anon key` es **pública** (viaja al navegador), así que la frontera real
+es la base de datos, no el código de Next.js — cualquiera puede pegarle a la REST
+API de Supabase directo. Todo se enforce en Postgres:
+
+- **RLS** en las 11 tablas (políticas en las migraciones). Un vecino no aprobado no
+  escribe ni saltándose la UI.
+- **Privilegios de columna** (migración 0006): sin sesión, `anon` NO puede leer
+  `author_name`/`user_id` de reseñas ni `author_name`/`uploaded_by` de fotos; solo
+  ve `author_initials` precalculadas. La capa de datos pide las columnas de autor
+  únicamente cuando hay sesión.
+- **Subida de fotos**: el bucket `photos` acepta solo `webp/jpeg/png` ≤ 2 MB bajo
+  `providers/` (límites del bucket + policy en 0006); validación server-side extra
+  en `uploadProviderPhoto`.
+- **Cabeceras** (`next.config.ts`): CSP acotada al proyecto de Supabase, HSTS,
+  X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
+
+Verificación rápida (como `anon`, con la anon key): `select=author_name` sobre
+`reviews` debe devolver `42501 permission denied`; `select=author_initials` debe
+funcionar.
+
+El endurecimiento pendiente se rastrea fuera del repo (ver
+`SECURITY-TODO.local.md`, ignorado por git).
+
+## Pendientes conocidos (diferidos a propósito — construir cuando haya señal de uso)
+
+- **Reportar reseña/proveedor**: la tabla `reports` existe; falta UI. Se construye cuando un vecino reporte algo (hoy la moderación la hace el admin desde Supabase).
+- **Bloquear vecinos ya aprobados** desde `/admin`: hoy solo se puede bloquear al aprobar (botón Rechazar). Para bloquear a un aprobado se usa Supabase (`update profiles set status='blocked'`). Reutilizaría `setProfileStatus`.
+- **Alta de eventos desde `/admin`** (hoy se insertan por SQL).
+- **Reseñas con fotos** (la tabla `review_photos` ya existe; falta UI).
+- **Workflows n8n**: keep-alive de Supabase y respaldo `pg_dump` (prioritarios — ver "Estado"); aviso de registro nuevo/reporte al admin; digest semanal.
+- **PWA** (manifest + íconos + service worker): se empezó y se revirtió; retomar si se quiere "instalar en inicio". El script que generaba los íconos se fue con el revert — hay que rehacerlo (`scripts/` y `public/` están vacíos).
+- **Página de perfil / eliminar usuario**: descartados por YAGNI (ver decisiones abajo).
+- **Endurecimiento de seguridad**: rastreado fuera del repo (ver la sección [Seguridad](#seguridad)).
+
+## Decisiones de producto tomadas
+
+- **Una reseña por vecino por proveedor** (constraint `reviews_one_per_user`); si cambia de opinión, edita la suya.
+- **Ownership**: autor edita/borra su reseña y sus fotos; el creador edita el proveedor pero NO lo borra (es contenido comunitario); el admin modera (ocultar vía `status`).
+- **Fotos**: solo estáticas, comprimidas a WebP en cliente (~250 KB), máx 4 por vecino y 12 por proveedor.
+- **Privacidad**: nombre del autor en reseñas = iniciales sin sesión / nombre+apellido con sesión; en fotos oculto sin sesión. Teléfono del proveedor es público (dato de negocio); teléfono del vecino solo lo ve el admin.
+- **Eliminar usuario**: nunca desde la app (requeriría service_role); se inhabilita (`blocked`) o se borra desde el Dashboard de Supabase.
