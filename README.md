@@ -9,7 +9,9 @@ Auth con magic link, Storage) · Vercel · n8n en VPS para automatizaciones.
 
 ## Estado (ago 2026): listo para lanzar
 
-El MVP está completo y en producción. **No queda nada técnico bloqueante.**
+El MVP está completo y en producción. **No queda nada técnico bloqueante.** Lo
+único que falta antes de invitar vecinos es el respaldo de la BD (punto 3 de la
+lista de abajo).
 
 - **Deploy**: Vercel (repo GitHub `IvanZepeta/directorio-vecinal`, push a `main` = deploy). El sitio se sirve en la **URL de Vercel** (`directorio-vecinal.vercel.app`); no hay dominio propio apuntando a la app.
 - **Correo**: magic link vía **Resend** (subdominio verificado `send.edgarhernandez.tech`, SPF/DKIM/DMARC en verde) como Custom SMTP en Supabase. Template en español ("Magic Link"). Rate limits subidos. Llega a bandeja, no spam. El dominio `edgarhernandez.tech` (Hostinger) existe **solo** para esto: Resend exige un dominio verificado para enviar. Su DNS apunta al hosting de Hostinger, no a Vercel, así que el apex no sirve el sitio — y no hace falta que lo sirva.
@@ -17,10 +19,12 @@ El MVP está completo y en producción. **No queda nada técnico bloqueante.**
 
 **Seguridad:** auditoría previa al lanzamiento hecha (ago 2026) y correcciones aplicadas — privacidad del autor forzada en la BD (migración 0006, privilegios de columna para `anon`), subida de fotos restringida (tipo/tamaño/carpeta) y cabeceras de seguridad (CSP, HSTS, etc.). Detalle en la sección [Seguridad](#seguridad).
 
+**Privacidad:** [aviso de privacidad](./app/privacidad/page.tsx) publicado en `/privacidad`, enlazado desde el footer y desde el registro. Cubre a los proveedores además de los vecinos, porque el modo curado publica nombre y WhatsApp de gente que nunca llenó un formulario. El formulario de registro dice explícitamente qué datos ve el admin y que el nombre aparece en las reseñas.
+
 **Lo que falta es operativo, no código:**
-1. Sembrar 30-50 proveedores del grupo de WhatsApp (como admin) + reseñar los que dieron servicio.
-2. Redactar y mandar el mensaje de lanzamiento al grupo.
-3. **Antes de que entren vecinos** (ya no opcional): keep-alive de Supabase (evita que el proyecto se pause por inactividad) y respaldo `pg_dump` diario, ambos en el VPS con n8n. En cuanto haya reseñas reales es data que no querés perder.
+1. Sembrar los proveedores del grupo de WhatsApp (como admin) + reseñar los que dieron servicio. Ya hay varios cargados en producción.
+2. Redactar y mandar el mensaje de lanzamiento al grupo. Antes de publicar el perfil de un proveedor conviene avisarle: su número queda en una página pública e indexable, y nadie se lo preguntó.
+3. **Antes de que entren vecinos** (ya no opcional, y es lo único que queda): keep-alive de Supabase (evita que el proyecto se pause por inactividad) y respaldo `pg_dump` diario, ambos en el VPS con n8n. Los proveedores sembrados se recapturan a mano, pero las reseñas de los vecinos no.
 
 ## Arranque local
 
@@ -115,6 +119,12 @@ API de Supabase directo. Todo se enforce en Postgres:
   en `uploadProviderPhoto`.
 - **Cabeceras** (`next.config.ts`): CSP acotada al proyecto de Supabase, HSTS,
   X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
+- **Métrica de contactos limpia**: el sitio es indexable a propósito, así que los
+  buscadores recorren los perfiles y siguen el botón de WhatsApp, que pasa por
+  `/ir/:id` y registra el click. Esa ruta no cuenta al tráfico que se anuncia como
+  bot en el User-Agent, y lleva `X-Robots-Tag: noindex, nofollow` para no entrar
+  al índice (el resto del sitio sí se indexa). Es limpieza de métrica, no un
+  control de seguridad: el User-Agent lo elige quien pide.
 
 Verificación rápida (como `anon`, con la anon key): `select=author_name` sobre
 `reviews` debe devolver `42501 permission denied`; `select=author_initials` debe
@@ -125,6 +135,7 @@ El endurecimiento pendiente se rastrea fuera del repo (ver
 
 ## Pendientes conocidos (diferidos a propósito — construir cuando haya señal de uso)
 
+- **Fase 1.5 — Valle Condesa (servicios + catálogo)**: alcance acordado el 2026-09-17, aún sin construir. Links del proveedor (Facebook/Instagram/Canva), contacto flexible (hoy `whatsapp` es `not null`), métrica por canal y sector como filtro. Detalle y trampas en [PLAN.md](./PLAN.md), sección 10.
 - **Reportar reseña/proveedor**: la tabla `reports` existe; falta UI. Se construye cuando un vecino reporte algo (hoy la moderación la hace el admin desde Supabase).
 - **Bloquear vecinos ya aprobados** desde `/admin`: hoy solo se puede bloquear al aprobar (botón Rechazar). Para bloquear a un aprobado se usa Supabase (`update profiles set status='blocked'`). Reutilizaría `setProfileStatus`.
 - **Alta de eventos desde `/admin`** (hoy se insertan por SQL).
