@@ -1,8 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { fieldErrorsFrom, providerSchema } from "@/lib/validations";
+import {
+  fieldErrorsFrom,
+  linkInputs,
+  linksFrom,
+  providerSchema,
+} from "@/lib/validations";
 import { getCurrentProfile } from "@/lib/data/profiles";
+import { isLinkRejected, LINK_REJECTED_MESSAGE } from "@/lib/links";
 import {
   createProvider,
   MAX_PHOTOS_PER_USER,
@@ -29,6 +35,7 @@ export async function createProviderAction(
     description: formData.get("description"),
     areas: formData.get("areas"),
     categories: formData.getAll("categories"),
+    ...linkInputs(formData),
   });
   if (!parsed.success) {
     return { fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -42,6 +49,7 @@ export async function createProviderAction(
       description: parsed.data.description,
       areas: parsed.data.areas,
       categories: parsed.data.categories,
+      links: linksFrom(parsed.data),
     });
 
     const photos = formData
@@ -50,7 +58,8 @@ export async function createProviderAction(
     for (const photo of photos.slice(0, MAX_PHOTOS_PER_USER)) {
       await uploadProviderPhoto(providerId, photo);
     }
-  } catch {
+  } catch (error) {
+    if (isLinkRejected(error)) return { error: LINK_REJECTED_MESSAGE };
     return { error: "No se pudo guardar el proveedor. Intenta de nuevo." };
   }
 

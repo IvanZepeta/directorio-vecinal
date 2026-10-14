@@ -10,6 +10,12 @@ import { ReviewForm } from "@/components/review-form";
 import { ReviewItem } from "@/components/review-item";
 import { PhotoUploadForm } from "@/components/photo-upload-form";
 import { PhotoGallery } from "@/components/photo-gallery";
+import { ProviderDescription } from "@/components/provider-description";
+import {
+  galleryLinks,
+  PhotosElsewhere,
+  ProviderLinks,
+} from "@/components/provider-links";
 import { SetupNotice } from "@/components/setup-notice";
 
 export const dynamic = "force-dynamic";
@@ -90,9 +96,7 @@ export default async function ProviderPage({
         </div>
 
         {provider.description && (
-          <p className="text-zinc-600 dark:text-zinc-400">
-            {provider.description}
-          </p>
+          <ProviderDescription text={provider.description} />
         )}
         {provider.areas && (
           <p className="text-sm text-zinc-500">
@@ -123,17 +127,22 @@ export default async function ProviderPage({
               </Link>
             )}
         </div>
+        <ProviderLinks links={provider.links} />
       </section>
 
-      {(provider.photos.length > 0 || profile?.status === "approved") && (
+      {(provider.photos.length > 0 ||
+        galleryLinks(provider.links).length > 0 ||
+        profile?.status === "approved") && (
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Fotos de sus trabajos</h2>
-          {provider.photos.length > 0 && (
+          {provider.photos.length > 0 ? (
             <PhotoGallery
               photos={publicPhotos}
               providerId={provider.id}
               providerName={provider.name}
             />
+          ) : (
+            <PhotosElsewhere links={provider.links} />
           )}
           {profile?.status === "approved" && (
             <PhotoUploadForm providerId={provider.id} />

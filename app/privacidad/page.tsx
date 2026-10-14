@@ -107,8 +107,9 @@ export default function PrivacidadPage() {
       <Section title="Si eres proveedor de servicios">
         <p>
           El directorio publica el <strong>nombre, el teléfono de WhatsApp</strong>{" "}
-          y, cuando existe, la descripción del servicio y las zonas donde trabaja
-          cada proveedor. Son datos de contacto de negocio y están visibles para
+          y, cuando existe, la descripción del servicio, las zonas donde trabaja
+          y los links a sus redes o páginas (Facebook, Instagram, catálogo,
+          sitio web) de cada proveedor. Son datos de contacto de negocio y están visibles para
           cualquier persona que abra el sitio, sin necesidad de tener cuenta.
         </p>
         <p>

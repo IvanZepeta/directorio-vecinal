@@ -1,6 +1,13 @@
+import type { LinkKind } from "./links";
+
 export type ProfileStatus = "pending" | "approved" | "blocked";
 export type ProviderStatus = "active" | "hidden";
 export type ReviewStatus = "visible" | "hidden";
+
+export interface ProviderLink {
+  kind: LinkKind;
+  url: string;
+}
 
 export interface Neighborhood {
   id: string;
@@ -67,6 +74,8 @@ export interface Provider {
   created_at: string;
   categories: Category[];
   photos: ProviderPhoto[];
+  // Solo los trae getProvider (la ficha); el listado no los pide.
+  links: ProviderLink[];
   reviews: Review[];
   average_rating: number | null;
   review_count: number;

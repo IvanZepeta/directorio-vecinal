@@ -367,10 +367,18 @@ Pensado para poder parar en cualquier etapa con algo útil en producción.
 | Etapa | Qué | Por qué en ese orden |
 |---|---|---|
 | **0** | Keep-alive de Supabase + `pg_dump` diario en el VPS | Ya era el único bloqueante del lanzamiento (README). Con contenido de terceros adentro, perder la BD deja de ser problema propio |
-| **A** | Migración `0007` (todas las columnas y políticas) + siembra de sectores y categorías de producto + pantalla de admin (10.3.8) + aviso de privacidad (10.3.9) | Es lo que te habilita a **operar**: capturar fichas nuevas y avisar a la gente. Nada de esto se ve público todavía |
+| **A** | Migración `0008` (el resto de columnas y políticas) + siembra de sectores + pantalla de admin (10.3.8) + resto del aviso de privacidad (10.3.9) | Es lo que te habilita a **operar**: capturar fichas nuevas y avisar a la gente. Nada de esto se ve público todavía |
 | **B** | Lo que ve el vecino: links en la ficha, chip de vecino, filtro por sector, rama sin WhatsApp en `/ir/[id]` | Se publica cuando ya hay contenido cargado y avisado, no antes |
 | **C** | `provider_clicks` con canal + tracking de los links | Es métrica, no funcionalidad: sirve cuando ya hay tráfico que medir |
 
-Una sola migración `0007` para todo el esquema de la fase: se aplica a mano en el
-SQL Editor (CLAUDE.md), y partirla en varias multiplica las probabilidades de
-correrlas fuera de orden.
+Una sola migración `0008` para el resto del esquema de la fase: se aplica a mano
+en el SQL Editor (CLAUDE.md), y partirla en varias multiplica las probabilidades
+de correrlas fuera de orden.
+
+**Adelantado (2026-10-14):** `0007_categories_and_links.sql` salió antes que el
+resto de la etapa A, en la rama `feat/categorias-y-links`: categorías "Eventos y
+fiestas" y "Fletes y mudanzas", links del proveedor (10.3.1) con su UI en ficha
+y formularios, y la mención de los links en `/privacidad`. **La 0007 se corre en
+producción antes de mergear esa rama**: la ficha embebe `provider_links` y sin la
+tabla truena. El contacto sin WhatsApp (10.3.2) y la métrica por canal (10.3.3)
+siguen en sus etapas.

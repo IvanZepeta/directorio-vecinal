@@ -6,6 +6,7 @@ import {
   type ProviderFormState,
 } from "@/app/alta/actions";
 import { FieldError } from "@/components/field-error";
+import { ProviderLinksFields } from "@/components/provider-links-fields";
 import { cleanPhone } from "@/lib/format";
 import { compressImage } from "@/lib/compress-image";
 import type { Category } from "@/lib/types";
@@ -102,9 +103,12 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium">Descripción (opcional)</span>
+        <span className="mb-1 block text-zinc-500">
+          Puedes hacer una lista empezando cada línea con un guion (-).
+        </span>
         <textarea
           name="description"
-          rows={3}
+          rows={5}
           maxLength={500}
           placeholder="¿Qué hace bien? ¿Cómo cobra? ¿Algo que el vecino deba saber?"
           className={inputClass}
@@ -122,6 +126,8 @@ export function ProviderForm({ categories }: { categories: Category[] }) {
           className={inputClass}
         />
       </label>
+
+      <ProviderLinksFields fieldErrors={state.fieldErrors} />
 
       <div className="text-sm">
         <span className="mb-1 block font-medium">
