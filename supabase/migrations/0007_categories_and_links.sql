@@ -29,13 +29,16 @@ create or replace function public.is_valid_provider_link(kind text, url text)
 returns boolean language sql immutable as $$
   select char_length(url) <= 500
     and url !~ '\s'
+    -- Sin "/.." ni puntos codificados: el navegador resuelve
+    -- "google.com/maps/../url?q=…" y el botón de Maps acabaría en otro lado.
+    and url !~* '(/\.\.|%2e)'
     and case kind
       when 'facebook'  then url ~* '^https://([a-z0-9-]+\.)*(facebook\.com|fb\.com|fb\.me)([/?#]|$)'
       when 'instagram' then url ~* '^https://([a-z0-9-]+\.)*instagram\.com([/?#]|$)'
       when 'tiktok'    then url ~* '^https://([a-z0-9-]+\.)*tiktok\.com([/?#]|$)'
       -- canva.com (diseños compartidos) y *.canva.site (sitios publicados)
       when 'canva'     then url ~* '^https://([a-z0-9-]+\.)*(canva\.com|canva\.site)([/?#]|$)'
-      when 'maps'      then url ~* '^https://(maps\.app\.goo\.gl/|goo\.gl/maps|maps\.google\.com(\.[a-z]{2})?([/?#]|$)|(www\.)?google\.com(\.[a-z]{2})?/maps)'
+      when 'maps'      then url ~* '^https://(maps\.app\.goo\.gl/|goo\.gl/maps([/?#]|$)|maps\.google\.com(\.[a-z]{2})?([/?#]|$)|(www\.)?google\.com(\.[a-z]{2})?/maps([/?#]|$))'
       -- Sitio propio: cualquier host, pero solo https
       when 'website'   then url ~* '^https://[a-z0-9-]+(\.[a-z0-9-]+)+([:/?#]|$)'
       else false

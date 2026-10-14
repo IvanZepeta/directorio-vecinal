@@ -23,7 +23,7 @@ funcionar (comando en el README, sección Seguridad).
 
 No hay Supabase CLI local. Las migraciones se aplican **a
 mano y en orden** pegándolas en el SQL Editor del proyecto de Supabase
-(`supabase/migrations/0001…` → `0006…`); no hay `supabase db push`. Al agregar
+(`supabase/migrations/0001…` → `0007…`); no hay `supabase db push`. Al agregar
 una migración, numérala siguiendo la serie y asume que alguien la va a correr
 manualmente en producción.
 
@@ -102,6 +102,15 @@ componente cliente → server action (app/**/actions.ts) → lib/data/* → Supa
 - **CSP** en `next.config.ts` se acota al origen de Supabase leído de
   `NEXT_PUBLIC_SUPABASE_URL` **en build time**. Cambiar de proyecto de Supabase
   exige rebuild, no solo cambiar la env var en runtime.
+- **Links del proveedor**: la BD valida https y host por tipo
+  (`is_valid_provider_link`, migración 0007) y `lib/links.ts` tiene los mismos
+  patrones para Zod. Son espejo: si cambias uno sin el otro, Zod deja pasar
+  algo que la BD rechaza con `23514`.
+- **Preview al compartir** (`lib/share.ts`, `lib/og.tsx`, `opengraph-image.tsx`):
+  lo cachean WhatsApp/Facebook, así que solo lleva datos públicos y **nunca el
+  teléfono** (el contacto debe pasar por `/ir/:id` para contarse). La imagen
+  sobreescribe el `Cache-Control` de un año que trae `ImageResponse` por
+  default; si no, una ficha oculta seguiría viéndose desde la CDN.
 - **Teléfonos**: se guardan como 10 dígitos limpios (`cleanPhone` en el
   `preprocess` de Zod); el `52` de lada se antepone solo al armar el `wa.me`.
 

@@ -223,20 +223,27 @@ export async function updateProvider(input: {
     );
   if (insertError) throw insertError;
 
-  // Mismo patrón que las categorías: se reemplazan completos. Un campo que el
-  // vecino vació en el formulario es un link que se borra.
-  const { error: deleteLinksError } = await supabase
-    .from("provider_links")
-    .delete()
-    .eq("provider_id", input.providerId);
-  if (deleteLinksError) throw deleteLinksError;
-
+  // Primero upsert y luego borrar solo los tipos que el vecino vació: si el
+  // upsert falla (p. ej. la BD rechaza un link), los que ya había se quedan.
+  // Borrar todo y reinsertar, como las categorías, los perdería.
   if (input.links.length > 0) {
-    const { error: linksError } = await supabase.from("provider_links").insert(
+    const { error: linksError } = await supabase.from("provider_links").upsert(
       input.links.map((link) => ({ provider_id: input.providerId, ...link })),
+      { onConflict: "provider_id,kind" },
     );
     if (linksError) throw linksError;
   }
+
+  const kept = input.links.map((link) => link.kind);
+  let removeLinks = supabase
+    .from("provider_links")
+    .delete()
+    .eq("provider_id", input.providerId);
+  if (kept.length > 0) {
+    removeLinks = removeLinks.not("kind", "in", `(${kept.join(",")})`);
+  }
+  const { error: deleteLinksError } = await removeLinks;
+  if (deleteLinksError) throw deleteLinksError;
 }
 
 // Tope total de fotos por proveedor (entre todos los vecinos que aportan).

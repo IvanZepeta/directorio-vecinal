@@ -9,10 +9,23 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const description =
+  "Proveedores de servicios recomendados y calificados por los vecinos del fraccionamiento.";
+
+// Sin metadataBase a propósito: en Vercel, Next arma las URLs absolutas de las
+// imágenes de preview con VERCEL_PROJECT_PRODUCTION_URL (o la URL del preview
+// deployment), que es lo que WhatsApp necesita para mostrarlas.
 export const metadata: Metadata = {
   title: "Directorio vecinal",
-  description:
-    "Proveedores de servicios recomendados y calificados por los vecinos del fraccionamiento.",
+  description,
+  openGraph: {
+    siteName: "Directorio vecinal",
+    locale: "es_MX",
+    type: "website",
+    title: "Directorio vecinal",
+    description,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

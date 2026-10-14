@@ -43,7 +43,7 @@ export const LINK_META: Record<
     label: "Google Maps",
     placeholder: "maps.app.goo.gl/…",
     pattern:
-      /^https:\/\/(maps\.app\.goo\.gl\/|goo\.gl\/maps|maps\.google\.com(\.[a-z]{2})?([/?#]|$)|(www\.)?google\.com(\.[a-z]{2})?\/maps)/i,
+      /^https:\/\/(maps\.app\.goo\.gl\/|goo\.gl\/maps([/?#]|$)|maps\.google\.com(\.[a-z]{2})?([/?#]|$)|(www\.)?google\.com(\.[a-z]{2})?\/maps([/?#]|$))/i,
   },
   website: {
     label: "Sitio web",
@@ -61,13 +61,18 @@ export function normalizeLink(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
   if (/^http:\/\//i.test(trimmed)) return `https://${trimmed.slice(7)}`;
-  if (!/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return `https://${trimmed}`;
+  // Ya trae esquema ("https://", "javascript:"…) → se deja tal cual y la
+  // validación decide. "ejemplo.com:8080" no cuenta: tras ":" viene un puerto.
+  if (!/^[a-z][a-z0-9+.-]*:(?!\d)/i.test(trimmed)) return `https://${trimmed}`;
   return trimmed;
 }
 
 export function isValidLink(kind: LinkKind, url: string): boolean {
   return (
-    url.length <= 500 && !/\s/.test(url) && LINK_META[kind].pattern.test(url)
+    url.length <= 500 &&
+    !/\s/.test(url) &&
+    !/(\/\.\.|%2e)/i.test(url) &&
+    LINK_META[kind].pattern.test(url)
   );
 }
 
