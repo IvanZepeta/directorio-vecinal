@@ -71,7 +71,8 @@ export function isValidLink(kind: LinkKind, url: string): boolean {
   return (
     url.length <= 500 &&
     !/\s/.test(url) &&
-    !/(\/\.\.|%2e)/i.test(url) &&
+    // "\" cuenta: el navegador lo trata como "/" y "maps\..\..\url" sale de /maps
+    !/(\/\.\.|%2e|\\)/i.test(url) &&
     LINK_META[kind].pattern.test(url)
   );
 }

@@ -105,7 +105,10 @@ componente cliente → server action (app/**/actions.ts) → lib/data/* → Supa
 - **Links del proveedor**: la BD valida https y host por tipo
   (`is_valid_provider_link`, migración 0007) y `lib/links.ts` tiene los mismos
   patrones para Zod. Son espejo: si cambias uno sin el otro, Zod deja pasar
-  algo que la BD rechaza con `23514`.
+  algo que la BD rechaza con `23514`. Validar el host no basta para Maps: el
+  navegador resuelve `/..`, `%2e` y `\` (lo trata como `/`), así que un link
+  que empieza en `/maps` puede salir de ahí. Los tres se rechazan; la `\` ya
+  se coló una vez.
 - **Preview al compartir** (`lib/share.ts`, `lib/og.tsx`, `opengraph-image.tsx`):
   lo cachean WhatsApp/Facebook, así que solo lleva datos públicos y **nunca el
   teléfono** (el contacto debe pasar por `/ir/:id` para contarse). La imagen

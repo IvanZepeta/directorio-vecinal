@@ -29,9 +29,10 @@ create or replace function public.is_valid_provider_link(kind text, url text)
 returns boolean language sql immutable as $$
   select char_length(url) <= 500
     and url !~ '\s'
-    -- Sin "/.." ni puntos codificados: el navegador resuelve
-    -- "google.com/maps/../url?q=…" y el botón de Maps acabaría en otro lado.
-    and url !~* '(/\.\.|%2e)'
+    -- Sin "/..", puntos codificados ni "\": el navegador resuelve
+    -- "google.com/maps/../url?q=…" (y "\" lo trata como "/") y el botón de
+    -- Maps acabaría en otro lado.
+    and url !~* '(/\.\.|%2e|\\)'
     and case kind
       when 'facebook'  then url ~* '^https://([a-z0-9-]+\.)*(facebook\.com|fb\.com|fb\.me)([/?#]|$)'
       when 'instagram' then url ~* '^https://([a-z0-9-]+\.)*instagram\.com([/?#]|$)'
