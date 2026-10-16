@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 // Fecha de la última revisión del texto. Actualizar al editar el contenido.
-const LAST_UPDATE = "6 de agosto de 2026";
+const LAST_UPDATE = "14 de octubre de 2026";
 
 function Section({
   title,
@@ -107,8 +107,9 @@ export default function PrivacidadPage() {
       <Section title="Si eres proveedor de servicios">
         <p>
           El directorio publica el <strong>nombre, el teléfono de WhatsApp</strong>{" "}
-          y, cuando existe, la descripción del servicio y las zonas donde trabaja
-          cada proveedor. Son datos de contacto de negocio y están visibles para
+          y, cuando existe, la descripción del servicio, las zonas donde trabaja
+          y los links a sus redes o páginas (Facebook, Instagram, catálogo,
+          sitio web) de cada proveedor. Son datos de contacto de negocio y están visibles para
           cualquier persona que abra el sitio, sin necesidad de tener cuenta.
         </p>
         <p>
@@ -126,6 +127,14 @@ export default function PrivacidadPage() {
           También guardamos un <strong>conteo de cuántas veces</strong> se pulsó
           el botón de contacto de cada perfil, para saber qué servicios busca la
           comunidad. Es un número, no registramos quién hizo clic.
+        </p>
+        <p>
+          Los links a redes y páginas llevan a sitios de terceros (Facebook,
+          Instagram, etc.), con sus propias reglas de privacidad. Cuando alguien
+          comparte el link de un perfil, WhatsApp o Facebook muestran una vista
+          previa con el nombre, las categorías, la calificación y el inicio de la
+          descripción; nunca el teléfono. Esas apps pueden conservar la vista
+          previa en sus chats aunque después corrijamos o quitemos el perfil.
         </p>
       </Section>
 

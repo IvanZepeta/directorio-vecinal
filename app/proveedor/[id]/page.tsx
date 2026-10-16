@@ -1,18 +1,57 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/config";
 import { getProvider } from "@/lib/data/providers";
 import { getCurrentProfile, getSession } from "@/lib/data/profiles";
 import { authorDisplay, formatPhone } from "@/lib/format";
+import { shareDescription, SITE_NAME } from "@/lib/share";
 import { StarRating } from "@/components/star-rating";
 import { Avatar } from "@/components/avatar";
 import { ReviewForm } from "@/components/review-form";
 import { ReviewItem } from "@/components/review-item";
 import { PhotoUploadForm } from "@/components/photo-upload-form";
 import { PhotoGallery } from "@/components/photo-gallery";
+import { ProviderDescription } from "@/components/provider-description";
+import {
+  galleryLinks,
+  PhotosElsewhere,
+  ProviderLinks,
+} from "@/components/provider-links";
 import { SetupNotice } from "@/components/setup-notice";
 
 export const dynamic = "force-dynamic";
+
+// Variante pública memoizada por request: generateMetadata y la página sin
+// sesión (el caso de los crawlers al compartir) comparten una sola query.
+const getPublicProvider = cache((id: string) => getProvider(id, false));
+
+// Preview al compartir. Solo datos públicos y sin teléfono (ver lib/share.ts).
+// La imagen la pone opengraph-image.tsx de esta misma carpeta.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  if (!isSupabaseConfigured()) return {};
+  const { id } = await params;
+  // Si la query falla (id que no es uuid, BD caída) el preview no debe tumbar
+  // nada: se queda el genérico y la página decide qué mostrar.
+  const provider = await getPublicProvider(id).catch(() => null);
+  // Oculto o inexistente: se queda el preview genérico del layout. Se exige
+  // `active` porque con sesión de admin la RLS sí devuelve fichas ocultas.
+  if (provider?.status !== "active") return {};
+
+  const title = `${provider.name} · ${SITE_NAME}`;
+  const description = shareDescription(provider);
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "profile" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function ProviderPage({
   params,
@@ -27,7 +66,9 @@ export default async function ProviderPage({
     getSession(),
   ]);
   // Con sesión traemos las columnas de autor; sin sesión ni se piden.
-  const provider = await getProvider(id, !!session);
+  const provider = session
+    ? await getProvider(id, true)
+    : await getPublicProvider(id);
   if (!provider) notFound();
 
   const isApproved = profile?.status === "approved";
@@ -90,9 +131,7 @@ export default async function ProviderPage({
         </div>
 
         {provider.description && (
-          <p className="text-zinc-600 dark:text-zinc-400">
-            {provider.description}
-          </p>
+          <ProviderDescription text={provider.description} />
         )}
         {provider.areas && (
           <p className="text-sm text-zinc-500">
@@ -123,17 +162,22 @@ export default async function ProviderPage({
               </Link>
             )}
         </div>
+        <ProviderLinks links={provider.links} />
       </section>
 
-      {(provider.photos.length > 0 || profile?.status === "approved") && (
+      {(provider.photos.length > 0 ||
+        galleryLinks(provider.links).length > 0 ||
+        profile?.status === "approved") && (
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Fotos de sus trabajos</h2>
-          {provider.photos.length > 0 && (
+          {provider.photos.length > 0 ? (
             <PhotoGallery
               photos={publicPhotos}
               providerId={provider.id}
               providerName={provider.name}
             />
+          ) : (
+            <PhotosElsewhere links={provider.links} />
           )}
           {profile?.status === "approved" && (
             <PhotoUploadForm providerId={provider.id} />

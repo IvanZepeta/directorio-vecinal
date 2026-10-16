@@ -1,8 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { fieldErrorsFrom, providerUpdateSchema } from "@/lib/validations";
+import {
+  fieldErrorsFrom,
+  linkInputs,
+  linksFrom,
+  providerUpdateSchema,
+} from "@/lib/validations";
 import { getCurrentProfile } from "@/lib/data/profiles";
+import { isLinkRejected, LINK_REJECTED_MESSAGE } from "@/lib/links";
 import { getProvider, updateProvider } from "@/lib/data/providers";
 
 export interface ProviderEditState {
@@ -26,6 +32,7 @@ export async function updateProviderAction(
     description: formData.get("description"),
     areas: formData.get("areas"),
     categories: formData.getAll("categories"),
+    ...linkInputs(formData),
   });
   if (!parsed.success) {
     return { fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -47,8 +54,10 @@ export async function updateProviderAction(
       description: parsed.data.description,
       areas: parsed.data.areas,
       categories: parsed.data.categories,
+      links: linksFrom(parsed.data),
     });
-  } catch {
+  } catch (error) {
+    if (isLinkRejected(error)) return { error: LINK_REJECTED_MESSAGE };
     return { error: "No se pudo guardar. Intenta de nuevo." };
   }
 
