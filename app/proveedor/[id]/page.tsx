@@ -11,6 +11,7 @@ import { ReviewItem } from "@/components/review-item";
 import { PhotoUploadForm } from "@/components/photo-upload-form";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { SetupNotice } from "@/components/setup-notice";
+import { ShareButton } from "@/components/share-button";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +114,11 @@ export default async function ProviderPage({
           >
             📞 {formatPhone(provider.whatsapp)}
           </a>
+          {/* Una ficha oculta solo la ve el admin; compartirla le daría a
+              quien la abra un 404. */}
+          {provider.status === "active" && (
+            <ShareButton id={provider.id} name={provider.name} />
+          )}
           {profile?.status === "approved" &&
             (provider.created_by === profile.id || profile.is_admin) && (
               <Link
