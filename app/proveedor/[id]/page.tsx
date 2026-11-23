@@ -91,7 +91,9 @@ export default async function ProviderPage({
         </div>
 
         {provider.description && (
-          <p className="text-zinc-600 dark:text-zinc-400">
+          // pre-line: respeta los saltos de línea con que se dio de alta (se
+          // pega de anuncios y de WhatsApp) sin dejar pasar HTML.
+          <p className="whitespace-pre-line text-zinc-600 dark:text-zinc-400">
             {provider.description}
           </p>
         )}
