@@ -6,6 +6,7 @@ import {
   type ProviderEditState,
 } from "@/app/proveedor/[id]/editar/actions";
 import { FieldError } from "@/components/field-error";
+import { ProviderLinksFields } from "@/components/provider-links-fields";
 import { cleanPhone } from "@/lib/format";
 import type { Category, Provider } from "@/lib/types";
 
@@ -87,9 +88,12 @@ export function ProviderEditForm({
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium">Descripción (opcional)</span>
+        <span className="mb-1 block text-zinc-500">
+          Puedes hacer una lista empezando cada línea con un guion (-).
+        </span>
         <textarea
           name="description"
-          rows={3}
+          rows={5}
           maxLength={500}
           defaultValue={provider.description ?? ""}
           className={inputClass}
@@ -107,6 +111,11 @@ export function ProviderEditForm({
           className={inputClass}
         />
       </label>
+
+      <ProviderLinksFields
+        links={provider.links}
+        fieldErrors={state.fieldErrors}
+      />
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 

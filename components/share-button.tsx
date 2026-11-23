@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-// Mismo nombre que el title del layout.
-const SITE_NAME = "Directorio vecinal";
+import { SITE_NAME } from "@/lib/share";
 
 // Solo recibe id y nombre, nunca el objeto del proveedor: lo que entra a un
 // componente cliente viaja en el payload RSC (ver la sanitización en la ficha).

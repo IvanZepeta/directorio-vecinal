@@ -1,5 +1,11 @@
 import { createServerSupabase } from "@/lib/supabase/server";
-import type { Category, Provider, ProviderPhoto, Review } from "@/lib/types";
+import type {
+  Category,
+  Provider,
+  ProviderLink,
+  ProviderPhoto,
+  Review,
+} from "@/lib/types";
 
 // El listado nunca muestra autor de foto ni de reseña: pide solo lo seguro.
 const SUMMARY_SELECT =
@@ -16,7 +22,7 @@ const PHOTO_PRIVATE = `${PHOTO_PUBLIC}, uploaded_by, author_name`;
 function detailSelect(includePrivate: boolean): string {
   const reviews = includePrivate ? REVIEW_PRIVATE : REVIEW_PUBLIC;
   const photos = includePrivate ? PHOTO_PRIVATE : PHOTO_PUBLIC;
-  return `*, provider_categories(category_id, categories(id, name, icon)), provider_photos(${photos}), reviews(${reviews})`;
+  return `*, provider_categories(category_id, categories(id, name, icon)), provider_photos(${photos}), provider_links(kind, url), reviews(${reviews})`;
 }
 
 interface ProviderRow {
@@ -30,6 +36,7 @@ interface ProviderRow {
   created_at: string;
   provider_categories: { categories: Category | null }[];
   provider_photos: ProviderPhoto[];
+  provider_links?: ProviderLink[];
   reviews: Partial<Review>[];
 }
 
@@ -55,6 +62,7 @@ function mapProvider(row: ProviderRow): Provider {
       .map((pc) => pc.categories)
       .filter((c): c is Category => c !== null),
     photos: row.provider_photos ?? [],
+    links: row.provider_links ?? [],
     reviews,
     average_rating: average,
     review_count: count,
@@ -141,6 +149,7 @@ export async function createProvider(input: {
   description?: string;
   areas?: string;
   categories: string[];
+  links: ProviderLink[];
 }): Promise<string> {
   const supabase = await createServerSupabase();
 
@@ -166,6 +175,13 @@ export async function createProvider(input: {
     );
   if (categoriesError) throw categoriesError;
 
+  if (input.links.length > 0) {
+    const { error: linksError } = await supabase.from("provider_links").insert(
+      input.links.map((link) => ({ provider_id: provider.id, ...link })),
+    );
+    if (linksError) throw linksError;
+  }
+
   return provider.id;
 }
 
@@ -176,6 +192,7 @@ export async function updateProvider(input: {
   description?: string;
   areas?: string;
   categories: string[];
+  links: ProviderLink[];
 }): Promise<void> {
   const supabase = await createServerSupabase();
 
@@ -205,6 +222,28 @@ export async function updateProvider(input: {
       })),
     );
   if (insertError) throw insertError;
+
+  // Primero upsert y luego borrar solo los tipos que el vecino vació: si el
+  // upsert falla (p. ej. la BD rechaza un link), los que ya había se quedan.
+  // Borrar todo y reinsertar, como las categorías, los perdería.
+  if (input.links.length > 0) {
+    const { error: linksError } = await supabase.from("provider_links").upsert(
+      input.links.map((link) => ({ provider_id: input.providerId, ...link })),
+      { onConflict: "provider_id,kind" },
+    );
+    if (linksError) throw linksError;
+  }
+
+  const kept = input.links.map((link) => link.kind);
+  let removeLinks = supabase
+    .from("provider_links")
+    .delete()
+    .eq("provider_id", input.providerId);
+  if (kept.length > 0) {
+    removeLinks = removeLinks.not("kind", "in", `(${kept.join(",")})`);
+  }
+  const { error: deleteLinksError } = await removeLinks;
+  if (deleteLinksError) throw deleteLinksError;
 }
 
 // Tope total de fotos por proveedor (entre todos los vecinos que aportan).
